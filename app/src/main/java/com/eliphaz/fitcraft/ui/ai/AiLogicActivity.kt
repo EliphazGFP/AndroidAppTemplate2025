@@ -1,8 +1,9 @@
-package com.jailton.androidapptemplate.ui.ai
+package com.eliphaz.fitcraft.ui.ai
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.jailton.androidapptemplate.R
+import com.eliphaz.fitcraft.R
+
 
 class AiLogicActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
