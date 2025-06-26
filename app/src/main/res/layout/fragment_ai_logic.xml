@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/ai_logic_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -15,6 +16,18 @@
         android:gravity="top"
         android:inputType="textMultiLine"
         android:layout_marginBottom="16dp" />
+
+    <ImageView
+    android:id="@+id/bitmapImageView"
+    android:layout_width="100dp"
+    android:layout_height="100dp"
+    android:layout_marginTop="16dp"
+    android:layout_gravity="center"
+    android:scaleType="centerCrop"
+    android:src="@android:drawable/gallery_thumb"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    android:contentDescription="Selecionar iMagem"/>
 
     <Button
         android:id="@+id/btn_select_image"

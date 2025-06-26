@@ -20,11 +20,13 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.provider.MediaStore
 import android.net.Uri
+import android.widget.ImageView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.graphics.drawable.toBitmap
-import com.google.firebase.ai.core.util.content
-import com.google.firebase.ai.generative.GenerativeImage
-
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.view.drawToBitmap
+import com.bumptech.glide.Glide
+import com.google.firebase.ai.type.content
 
 
 class AiLogicFragment : Fragment() {
@@ -35,7 +37,7 @@ class AiLogicFragment : Fragment() {
     private lateinit var model: GenerativeModel
     private lateinit var imageButton: Button
     private var imageUri: Uri? = null
-
+    private lateinit var itemImageView: ImageView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -47,7 +49,7 @@ class AiLogicFragment : Fragment() {
         resultText = view.findViewById(R.id.result_text)
         generateButton = view.findViewById(R.id.btn_generate)
         imageButton = view.findViewById(R.id.btn_select_image)
-
+        itemImageView = view.findViewById(R.id.bitmapImageView)
 
         model = Firebase.ai(backend = GenerativeBackend.googleAI())
             .generativeModel("gemini-2.0-flash")
@@ -55,6 +57,7 @@ class AiLogicFragment : Fragment() {
         val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             if (uri != null) {
                 imageUri = uri
+                Glide.with(this).load(imageUri).into(itemImageView)
                 resultText.text = "Imagem selecionada. Pronto para gerar."
             } else {
                 resultText.text = "Nenhuma imagem selecionada."
@@ -67,14 +70,21 @@ class AiLogicFragment : Fragment() {
 
         generateButton.setOnClickListener {
             val prompt = promptInput.text.toString().trim()
-            resultText.text = "Aguardando resposta..."
-
-            if (imageUri != null) {
-                generateFromPromptAndImage(prompt, imageUri!!)
-            } else if (prompt.isNotEmpty()) {
-                generateFromPrompt(prompt)
+            if (prompt.isNotEmpty()) {
+                resultText.text = "Aguardando resposta..."
+                val drawable = itemImageView.drawable
+                if (drawable != null) {
+                    try {
+                        val bitmap = itemImageView.drawToBitmap()
+                        generateFromPrompt(prompt, bitmap)
+                    } catch (e: Exception) {
+                        resultText.text = "Erro ao processar imagem: ${e.message}"
+                    }
+                } else {
+                    resultText.text = "Selecione uma imagem."
+                }
             } else {
-                resultText.text = "Digite um prompt ou selecione uma imagem."
+                resultText.text = "Digite um prompt para continuar."
             }
         }
 
@@ -82,23 +92,17 @@ class AiLogicFragment : Fragment() {
         return view
     }
 
-    private fun generateFromPromptAndImage(prompt: String, uri: Uri) {
-        lifecycleScope.launch {
-            try {
-                val stream = requireContext().contentResolver.openInputStream(uri)
-                val image = GenerativeImage.fromStream(stream!!)
-                val response = model.generateContent(prompt, listOf(image))
-                resultText.text = response.text ?: "Sem resposta da IA."
-            } catch (e: Exception) {
-                resultText.text = "Erro ao gerar com imagem: ${e.message}"
-            }
-        }
-    }
 
-    private fun generateFromPrompt(prompt: String) {
+
+    private fun generateFromPrompt(prompt: String, bitmap: Bitmap) {
         lifecycleScope.launch {
             try {
-                val response = model.generateContent(prompt)
+                // Provide a prompt that includes the image specified above and text
+                val promptImage = content {
+                    image(bitmap)
+                    text(prompt)
+                }
+                val response = model.generateContent(promptImage)
                 resultText.text = response.text ?: "Nenhuma resposta recebida."
             } catch (e: Exception) {
                 resultText.text = "Erro ao gerar resposta: ${e.message}"
